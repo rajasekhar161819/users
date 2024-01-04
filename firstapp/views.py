@@ -46,7 +46,7 @@ class Signup(View):
                     password=password1,
                     email=email)
                 user.save()
-                return redirect("/")
+                return redirect("base")
         else:
             messages.info(request, "password not matching")
             return redirect("signup")
