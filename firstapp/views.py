@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import logout
 from django.views import View
+from .models import UserProfile
 
 # Create your views here.
 
@@ -28,10 +29,14 @@ class Login(View):
 
 class Signup(View):
     def post(self, request):
+        firstname = request.POST['firstname']
+        lastname = request.POST['lastname']
         username = request.POST['username']
         email = request.POST['email']
         password1 = request.POST['password']
         password2 = request.POST['confirmPassword']
+        address = request.POST['address']
+        profile_picture = request.FILES.get('profilePicture')
 
         if password1 == password2:
             if User.objects.filter(username=username).exists():
@@ -42,11 +47,19 @@ class Signup(View):
                 return redirect("signup")
             else:
                 user = User.objects.create_user(
+                    first_name=firstname,
+                    last_name=lastname,
                     username=username,
                     password=password1,
-                    email=email)
+                    email=email,)
                 user.save()
-                return redirect("base")
+                user_profile = UserProfile.objects.create(
+                    user=user,
+                    address=address,
+                    profile_picture=profile_picture,
+                )
+                user_profile.save()
+                return redirect("/")
         else:
             messages.info(request, "password not matching")
             return redirect("signup")
@@ -56,13 +69,15 @@ class Signup(View):
     
 class Base(View):
     def get(self, request):
-        return render(request, 'base.html', {'title': "Dashboard", 'user':request.user.username})
+        return render(request, 'base.html', {'title': "Dashboard", 'user':request.user.first_name})
     
 
 class UserDetails(View):
     def get(self,request):
+        user = request.user
+        user_profile = user.userprofile
         if request.user.is_authenticated:
-            return render(request, 'userdetails.html',{'title':"user",'User':request.user})
+            return render(request, 'userdetails.html',{'title':"user",'User':user, 'user_profile': user_profile})
 
         return redirect("login")
     
